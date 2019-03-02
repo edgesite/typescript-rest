@@ -405,7 +405,7 @@ class ConfigImpl implements Config {
             const configImpl = this;
             this.iocprovider = {
                 get: (overrideParameters?: any[]) => {
-                    const params = configImpl.getParameters();
+                    const params = configImpl.getParameters() || [];
                     if (overrideParameters) {
                         overrideParameters.forEach((p, idx) => {
                             if (p !== undefined) params[idx] = p;
