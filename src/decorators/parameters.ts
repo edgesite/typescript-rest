@@ -382,7 +382,9 @@ class ParameterDecorator {
     public decorateParameterOrProperty(args: Array<any>) {
         if (!this.nameRequired || this.name) {
             args = _.without(args, undefined);
-            if (args.length < 3 || typeof args[2] === 'undefined') {
+            if (args.length === 2 && typeof args[1] === 'number') {
+                return this.decorateCtorParameter(args[0], args[1]);
+            } else if (args.length < 3 || typeof args[2] === 'undefined') {
                 return this.decorateProperty(args[0], args[1]);
             } else if (args.length === 3 && typeof args[2] === 'number') {
                 return this.decorateParameter(args[0], args[1], args[2]);
@@ -416,6 +418,16 @@ class ParameterDecorator {
         const classData: ServiceClass = ServerContainer.get().registerServiceClass(target.constructor);
         const propertyType = Reflect.getMetadata('design:type', target, key);
         classData.addProperty(key, {
+            name: this.name,
+            propertyType: propertyType,
+            type: this.paramType
+        });
+    }
+
+    private decorateCtorParameter(target: Function, idx: number) {
+        const classData: ServiceClass = ServerContainer.get().registerServiceClass(target.prototype.constructor);
+        const propertyType = Reflect.getMetadata('design:paramtypes', target)[idx];
+        classData.addCtorParam(idx, {
             name: this.name,
             propertyType: propertyType,
             type: this.paramType

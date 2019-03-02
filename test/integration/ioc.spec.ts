@@ -5,8 +5,8 @@ import * as express from 'express';
 import * as _ from 'lodash';
 import 'mocha';
 import * as request from 'request';
-import { AutoWired, Inject } from 'typescript-ioc';
-import { DefaultServiceFactory, GET, Path, Server } from '../../src/typescript-rest';
+import { AutoWired, Inject } from '../../src/ioc';
+import { DefaultServiceFactory, GET, Path, Server, QueryParam } from '../../src/typescript-rest';
 const expect = chai.expect;
 
 Server.useIoC();
@@ -58,6 +58,19 @@ export class IoCService3 {
 export class IoCService4 extends IoCService2 {
 }
 
+@Path('ioctest5')
+@AutoWired
+export class IoCService5 {
+
+    constructor(@QueryParam('name') private name: string) {
+    }
+
+    @GET
+    public test(): string {
+        return `Hello ${this.name}`;
+    }
+}
+
 describe('IoC Tests', () => {
 
     before(() => {
@@ -93,6 +106,12 @@ describe('IoC Tests', () => {
                 done();
             });
         });
+        it('constructor parameter inject correctly', (done) => {
+            request('http://localhost:5674/ioctest5?name=world', (error, response, body) => {
+                expect(body).to.eq('Hello world');
+                done();
+            });
+        });
     });
 });
 
@@ -102,7 +121,7 @@ function startApi(): Promise<void> {
     return new Promise<void>((resolve, reject) => {
         const app: express.Application = express();
         app.set('env', 'test');
-        Server.buildServices(app, IoCService, IoCService2, IoCService3, IoCService4);
+        Server.buildServices(app, IoCService, IoCService2, IoCService3, IoCService4, IoCService5);
         server = app.listen(5674, (err: any) => {
             if (err) {
                 return reject(err);

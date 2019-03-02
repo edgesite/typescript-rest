@@ -110,7 +110,13 @@ export class ServiceInvoker {
     }
 
     private createService(context: ServiceContext) {
-        const serviceObject = ServerContainer.get().serviceFactory.create(this.serviceClass.targetClass, context);
+        const ctorParams: any[] = [];
+        if (this.serviceClass.hasCtorParams()) {
+            this.serviceClass.ctorParams.forEach((property, idx) => {
+                ctorParams[idx] = this.processParameter(context, property);
+            });
+        }
+        const serviceObject = ServerContainer.get().serviceFactory.create(this.serviceClass.targetClass, context, ctorParams);
         if (this.serviceClass.hasProperties()) {
             this.serviceClass.properties.forEach((property, key) => {
                 serviceObject[key] = this.processParameter(context, property);

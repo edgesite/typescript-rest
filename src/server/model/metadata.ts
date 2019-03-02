@@ -24,12 +24,21 @@ export class ServiceClass {
     public languages: Array<string>;
     public accepts: Array<string>;
     public properties: Map<string, ServiceProperty>;
+    public ctorParams = new Map<number, ServiceProperty>();
     public isAbstract: boolean = false;
     public ignoreNextMiddlewares: boolean = false;
     constructor(targetClass: any) {
         this.targetClass = targetClass;
         this.methods = new Map<string, ServiceMethod>();
         this.properties = new Map<string, ServiceProperty>();
+    }
+
+    public addCtorParam(idx: number, desc: ServiceProperty) {
+        this.ctorParams.set(idx, desc);
+    }
+
+    public hasCtorParams() {
+        return this.ctorParams && this.ctorParams.size > 0;
     }
 
     public addProperty(key: string, property: ServiceProperty) {
