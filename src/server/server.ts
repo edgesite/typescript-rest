@@ -6,6 +6,7 @@ import * as _ from 'lodash';
 import 'multer';
 import * as path from 'path';
 import * as YAML from 'yamljs';
+import * as ioc from '../ioc';
 import {
     FileLimits, HttpMethod, ParameterConverter,
     ServiceAuthenticator, ServiceFactory
@@ -98,10 +99,9 @@ export class Server {
      * @param es6 if true, import typescript-ioc/es6
      */
     public static useIoC(es6?: boolean) {
-        const ioc = require(es6 ? 'typescript-ioc/es6' : 'typescript-ioc');
         Server.registerServiceFactory({
-            create: (serviceClass) => {
-                return ioc.Container.get(serviceClass);
+            create: (serviceClass, ctx, params) => {
+                return ioc.Container.get(serviceClass, params);
             },
             getTargetClass: (serviceClass: Function) => {
                 let typeConstructor: any = serviceClass;
