@@ -234,8 +234,8 @@ export class Container {
      * @param source The dependency type to resolve
      * @return an object resolved for the given source type;
      */
-    public static get(source: Function) {
-        return IoCContainer.get(source);
+    public static get(source: Function, overrideParameters?: any[]) {
+        return IoCContainer.get(source, overrideParameters);
     }
 
     /**
@@ -308,12 +308,12 @@ class IoCContainer {
         return config;
     }
 
-    public static get(source: Function) {
+    public static get(source: Function, overrideParameters?: any[]) {
         const config: ConfigImpl = IoCContainer.bind(source) as ConfigImpl;
         if (!config.iocprovider) {
             config.to(config.source as FunctionConstructor);
         }
-        return config.getInstance();
+        return config.getInstance(overrideParameters);
     }
 
     public static getType(source: Function): Function {
@@ -342,7 +342,7 @@ class IoCContainer {
     public static assertInstantiable(target: any) {
         if (target['__block_Instantiation']) {
             throw new TypeError('Can not instantiate Singleton class. ' +
-              'Ask Container for it, using Container.get');
+                'Ask Container for it, using Container.get');
         }
     }
     private static bindings: Map<FunctionConstructor, ConfigImpl> = new Map<FunctionConstructor, ConfigImpl>();
@@ -354,7 +354,7 @@ class IoCContainer {
 function checkType(source: Object) {
     if (!source) {
         throw new TypeError('Invalid type requested to IoC ' +
-          'container. Type is not defined.');
+            'container. Type is not defined.');
     }
 }
 
@@ -404,8 +404,13 @@ class ConfigImpl implements Config {
         if (this.source === targetSource) {
             const configImpl = this;
             this.iocprovider = {
-                get: () => {
+                get: (overrideParameters?: any[]) => {
                     const params = configImpl.getParameters();
+                    if (overrideParameters) {
+                        overrideParameters.forEach((p, idx) => {
+                            if (p !== undefined) params[idx] = p;
+                        })
+                    }
                     if (configImpl.decoratedConstructor) {
                         return (params ? new configImpl.decoratedConstructor(...params) : new configImpl.decoratedConstructor());
                     }
@@ -454,11 +459,11 @@ class ConfigImpl implements Config {
         return this;
     }
 
-    public getInstance() {
+    public getInstance(overrideParameters?: any[]) {
         if (!this.iocscope) {
             this.scope(Scope.Local);
         }
-        return this.iocscope.resolve(this.iocprovider, this.source);
+        return this.iocscope.resolve(this.iocprovider, this.source, overrideParameters);
     }
 
     private getParameters() {
@@ -477,7 +482,7 @@ export interface Provider {
      * Factory method, that should create the bind instance.
      * @return the instance to be used by the Container
      */
-    get(): Object;
+    get(overrideParameters?: any[]): Object;
 }
 
 /**
@@ -488,13 +493,13 @@ export abstract class Scope {
      * A reference to the LocalScope. Local Scope return a new instance for each dependency resolution requested.
      * This is the default scope.
      */
-      // tslint:disable-next-line:variable-name
+    // tslint:disable-next-line:variable-name
     public static Local: Scope;
     /**
      * A reference to the SingletonScope. Singleton Scope return the same instance for any
      * dependency resolution requested.
      */
-      // tslint:disable-next-line:variable-name
+    // tslint:disable-next-line:variable-name
     public static Singleton: Scope;
 
     /**
@@ -504,7 +509,7 @@ export abstract class Scope {
      * @param source The source type of this bind.
      * @return the resolved instance.
      */
-    public abstract resolve(provider: Provider, source: Function): any;
+    public abstract resolve(provider: Provider, source: Function, overrideParameters?: any[]): any;
 
     /**
      * Called by the IoC Container when some configuration is changed on the Container binding.
@@ -519,8 +524,11 @@ export abstract class Scope {
  * Default [[Scope]] that always create a new instace for any dependency resolution request
  */
 class LocalScope extends Scope {
-    public resolve(provider: Provider, source: Function) {
-        return provider.get();
+    constructor() {
+        super();
+    }
+    public resolve(provider: Provider, source: Function, overrideParameters?: any[]) {
+        return provider.get(overrideParameters);
     }
 }
 
